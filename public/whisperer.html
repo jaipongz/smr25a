@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPTX Generator - Voice to Text</title>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <style>
+        /* ... CSS เดิม ... */
+
+        .voice-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .voice-section h3 {
+            color: #2C3E50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4em;
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .btn-voice {
+            background: #6c5ce7;
+            color: white;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .btn-voice:hover {
+            background: #5b4fcf;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+        }
+
+        .btn-voice:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-record {
+            background: #e74c3c;
+        }
+
+        .btn-record:hover {
+            background: #c0392b;
+        }
+
+        .btn-record.recording {
+            background: #c0392b;
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+        }
+
+        .btn-upload {
+            background: #3498db;
+        }
+
+        .btn-upload:hover {
+            background: #2980b9;
+        }
+
+        .audio-preview {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #3498db;
+            display: none;
+        }
+
+        .transcription-result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #e8f5e8;
+            border-radius: 10px;
+            border: 2px solid #27ae60;
+            display: none;
+        }
+
+        .transcription-text {
+            white-space: pre-wrap;
+            line-height: 1.7;
+            color: #2C3E50;
+            font-size: 16px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .audio-visualizer {
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(135deg, #2C3E50, #4A6572);
+            border-radius: 8px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+            display: none;
+        }
+
+        .visualizer-bar {
+            position: absolute;
+            bottom: 0;
+            width: 6px;
+            background: #3498db;
+            margin: 0 2px;
+            border-radius: 3px 3px 0 0;
+            transition: height 0.1s ease;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .language-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e1e8ed;
+        }
+
+        .language-selector label {
+            margin: 0;
+            font-weight: 600;
+            color: #2C3E50;
+        }
+
+        .language-selector select {
+            width: auto;
+            min-width: 180px;
+            padding: 10px;
+        }
+
+        .voice-status {
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .status-recording {
+            background: #ffeaa7;
+            color: #e17055;
+            border: 1px solid #fab1a0;
+        }
+
+        .status-processing {
+            background: #74b9ff;
+            color: #2d3436;
+            border: 1px solid #0984e3;
+        }
+
+        .audio-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 PPTX Generator - Voice to Text</h1>
+            <p>แปลงเสียงเป็นข้อความและสร้าง PowerPoint อัตโนมัติ</p>
+        </div>
+
+        <div class="content">
+            <div class="alert" id="alert"></div>
+
+            <!-- ส่วนแปลงเสียงเป็นข้อความ -->
+            <div class="voice-section">
+                <h3>🎤 แปลงเสียงเป็นข้อความ (Whisper)</h3>
+                
+                <div class="language-selector">
+                    <label>เลือกภาษา:</label>
+                    <select id="languageSelect">
+                        <option value="th">ไทย</option>
+                        <option value="en">English</option>
+                        <option value="zh">中文</option>
+                        <option value="ja">日本語</option>
+                        <option value="ko">한국어</option>
+                    </select>
+                </div>
+
+                <div class="voice-controls">
+                    <button class="btn-voice btn-record" id="recordBtn" onclick="toggleRecording()">
+                        <span>●</span> อัดเสียงแบบ Real-time
+                    </button>
+                    
+                    <div class="file-upload">
+                        <button class="btn-voice btn-upload">
+                            <span>📁</span> อัพโหลดไฟล์เสียง
+                        </button>
+                        <input type="file" id="audioUpload" accept="audio/*,video/*" onchange="handleAudioUpload(event)">
+                    </div>
+                </div>
+
+                <div class="voice-status" id="voiceStatus"></div>
+
+                <div class="audio-visualizer" id="visualizer">
+                    <!-- Visualizer bars will be generated by JavaScript -->
+                </div>
+
+                <div class="audio-preview" id="audioPreview">
+                    <h4>🎵 ไฟล์เสียงที่อัพโหลด:</h4>
+                    <audio id="audioPlayer" controls style="width: 100%; margin: 15px 0;"></audio>
+                    <button class="btn-voice" onclick="transcribeAudio()" id="transcribeBtn" style="background: #27ae60;">
+                        <span>🔊</span> แปลงเสียงเป็นข้อความ
+                    </button>
+                </div>
+
+                <div class="transcription-result" id="transcriptionResult">
+                    <h4>📝 ข้อความที่แปลงได้:</h4>
+                    <div class="transcription-text" id="transcriptionText"></div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn-voice" onclick="useTranscription()" style="background: #27ae60;">
+                            <span>📝</span> ใช้ข้อความนี้ใน Editor
+                        </button>
+                        <button class="btn-voice" onclick="copyTranscription()" style="background: #3498db;">
+                            <span>📋</span> คัดลอกข้อความ
+                        </button>
+                        <button class="btn-voice" onclick="clearTranscription()" style="background: #e74c3c;">
+                            <span>🗑️</span> ล้าง
+                        </button>
+                    </div>
+                </div>
+
+                <div class="audio-info">
+                    <h4>💡 ข้อมูลการใช้งาน:</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li>รองรับไฟล์เสียง: MP3, WAV, M4A, และไฟล์วิดีโอ</li>
+                        <li>ขนาดไฟล์สูงสุด: 100MB</li>
+                        <li>รองรับการอัดเสียงแบบ real-time</li>
+                        <li>แปลงเสียงเป็นข้อความด้วย Whisper AI</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ส่วนเดิมสำหรับสร้าง PowerPoint -->
+            <!-- ... โค้ดเดิม ... -->
+        </div>
+    </div>
+
+    <script>
+        // ตัวแปรสำหรับการอัดเสียง
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let currentAudioBlob = null;
+        let audioContext = null;
+        let analyser = null;
+
+        // ฟังก์ชันสำหรับการอัดเสียง
+        async function toggleRecording() {
+            const recordBtn = document.getElementById('recordBtn');
+            const visualizer = document.getElementById('visualizer');
+            const voiceStatus = document.getElementById('voiceStatus');
+
+            if (!isRecording) {
+                // เริ่มอัดเสียง
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            channelCount: 1,
+                            sampleRate: 16000,
+                            echoCancellation: true,
+                            noiseSuppression: true
+                        } 
+                    });
+                    
+                    mediaRecorder = new MediaRecorder(stream, {
+                        mimeType: 'audio/webm;codecs=opus'
+                    });
+                    
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        currentAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        
+                        // แสดง preview
+                        const audioPlayer = document.getElementById('audioPlayer');
+                        const audioPreview = document.getElementById('audioPreview');
+                        
+                        audioPlayer.src = URL.createObjectURL(currentAudioBlob);
+                        audioPreview.style.display = 'block';
+                        
+                        // หยุด visualizer
+                        if (audioContext) {
+                            await audioContext.close();
+                            audioContext = null;
+                            analyser = null;
+                        }
+                        
+                        // อัพเดทสถานะ
+                        voiceStatus.style.display = 'none';
+                    };
+
+                    mediaRecorder.start(1000); // เก็บข้อมูลทุก 1 วินาที
+                    isRecording = true;
+                    recordBtn.classList.add('recording');
+                    recordBtn.innerHTML = '<span>■</span> หยุดอัดเสียง';
+                    
+                    // แสดง visualizer
+                    visualizer.style.display = 'block';
+                    voiceStatus.textContent = '🎤 กำลังอัดเสียง... พูดเลย!';
+                    voiceStatus.className = 'voice-status status-recording';
+                    voiceStatus.style.display = 'block';
+                    
+                    // สร้าง visualizer
+                    createVisualizer(stream);
+
+                } catch (error) {
+                    console.error('Error accessing microphone:', error);
+                    showAlert('ไม่สามารถเข้าถึงไมโครโฟนได้ กรุณาอนุญาตการเข้าถึงไมโครโฟน', 'error');
+                }
+            } else {
+                // หยุดอัดเสียง
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                    isRecording = false;
+                    recordBtn.classList.remove('recording');
+                    recordBtn.innerHTML = '<span>●</span> อัดเสียงแบบ Real-time';
+                    visualizer.style.display = 'none';
+                    
+                    // อัพเดทสถานะ
+                    voiceStatus.textContent = '✅ อัดเสียงเสร็จสิ้น!';
+                    voiceStatus.className = 'voice-status status-processing';
+                }
+            }
+        }
+
+        // ฟังก์ชันสร้าง audio visualizer
+        function createVisualizer(stream) {
+            audioContext = new AudioContext();
+            analyser = audioContext.createAnalyser();
+            const source = audioContext.createMediaStreamSource(stream);
+            source.connect(analyser);
+            
+            analyser.fftSize = 256;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            
+            const visualizer = document.getElementById('visualizer');
+            visualizer.innerHTML = '';
+            
+            // สร้าง bars สำหรับ visualizer
+            const barCount = 32;
+            for (let i = 0; i < barCount; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'visualizer-bar';
+                bar.style.left = `${(i / barCount) * 100}%`;
+                visualizer.appendChild(bar);
+            }
+            
+            const bars = visualizer.getElementsByClassName('visualizer-bar');
+            
+            function animate() {
+                if (!isRecording || !analyser) return;
+                
+                analyser.getByteFrequencyData(dataArray);
+                
+                for (let i = 0; i < bars.length; i++) {
+                    const value = dataArray[Math.floor(i * bufferLength / bars.length)] / 255;
+                    const height = Math.max(10, value * 100);
+                    bars[i].style.height = `${height}%`;
+                    
+                    // สีเปลี่ยนตามความดัง
+                    const hue = value * 120;
+                    bars[i].style.background = `hsl(${hue}, 100%, 65%)`;
+                }
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+
+        // ฟังก์ชันอัพโหลดไฟล์เสียง
+        function handleAudioUpload(event) {
+            const file = event.target.files[0];
+            if (file && (file.type.startsWith('audio/') || file.type.startsWith('video/'))) {
+                currentAudioBlob = file;
+                const audioUrl = URL.createObjectURL(file);
+                
+                const audioPlayer = document.getElementById('audioPlayer');
+                const audioPreview = document.getElementById('audioPreview');
+                
+                audioPlayer.src = audioUrl;
+                audioPreview.style.display = 'block';
+                
+                showAlert(`อัพโหลดไฟล์ "${file.name}" สำเร็จ!`, 'success');
+            } else {
+                showAlert('กรุณาเลือกไฟล์เสียงหรือวิดีโอเท่านั้น', 'error');
+            }
+        }
+
+        // ฟังก์ชันแปลงเสียงเป็นข้อความ
+        async function transcribeAudio() {
+            if (!currentAudioBlob) {
+                showAlert('กรุณาอัดเสียงหรืออัพโหลดไฟล์เสียงก่อน', 'error');
+                return;
+            }
+
+            const transcribeBtn = document.getElementById('transcribeBtn');
+            const language = document.getElementById('languageSelect').value;
+            const voiceStatus = document.getElementById('voiceStatus');
+
+            transcribeBtn.disabled = true;
+            transcribeBtn.innerHTML = '<span>⏳</span> กำลังแปลง...';
+            voiceStatus.textContent = '🔄 กำลังแปลงเสียงเป็นข้อความ...';
+            voiceStatus.className = 'voice-status status-processing';
+            voiceStatus.style.display = 'block';
+
+            try {
+                const formData = new FormData();
+                formData.append('audio', currentAudioBlob);
+                formData.append('language', language);
+
+                const response = await fetch('/transcribe-audio', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const transcriptionResult = document.getElementById('transcriptionResult');
+                    const transcriptionText = document.getElementById('transcriptionText');
+                    
+                    transcriptionText.textContent = data.text;
+                    transcriptionResult.style.display = 'block';
+                    
+                    voiceStatus.textContent = '✅ แปลงเสียงเป็นข้อความสำเร็จ!';
+                    showAlert('แปลงเสียงเป็นข้อความสำเร็จ!', 'success');
+                    
+                    transcriptionResult.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    voiceStatus.style.display = 'none';
+                    showAlert(data.error || 'การแปลงเสียงล้มเหลว', 'error');
+                }
+            } catch (error) {
+                console.error('Transcription error:', error);
+                voiceStatus.style.display = 'none';
+                showAlert('เกิดข้อผิดพลาดในการแปลงเสียง', 'error');
+            } finally {
+                transcribeBtn.disabled = false;
+                transcribeBtn.innerHTML = '<span>🔊</span> แปลงเสียงเป็นข้อความ';
+            }
+        }
+
+        // ฟังก์ชันใช้ข้อความที่แปลงได้ใน Editor
+        function useTranscription() {
+            const transcriptionText = document.getElementById('transcriptionText').textContent;
+            const quill = document.querySelector('#editor').__quill;
+            
+            if (quill && transcriptionText) {
+                const length = quill.getLength();
+                quill.insertText(length, '\n\n' + transcriptionText + '\n');
+                showAlert('เพิ่มข้อความลงใน Editor สำเร็จ!', 'success');
+            }
+        }
+
+        // ฟังก์ชันคัดลอกข้อความ
+        function copyTranscription() {
+            const transcriptionText = document.getElementById('transcriptionText').textContent;
+            navigator.clipboard.writeText(transcriptionText).then(() => {
+                showAlert('คัดลอกข้อความไปยังคลิปบอร์ดแล้ว!', 'success');
+            });
+        }
+
+        // ฟังก์ชันล้างข้อความ
+        function clearTranscription() {
+            document.getElementById('transcriptionText').textContent = '';
+            document.getElementById('transcriptionResult').style.display = 'none';
+            document.getElementById('audioPreview').style.display = 'none';
+            currentAudioBlob = null;
+        }
+
+        // ฟังก์ชันแสดง alert
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // ... JavaScript เดิมที่เหลือ ...
+    </script>
+</body>
+</html>

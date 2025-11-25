@@ -1,0 +1,3 @@
+whisper-openai
+torch
+numpy

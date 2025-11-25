@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPTX Generator - WYSIWYG</title>
+    <!-- Quill Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2C3E50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+            display: grid;
+            gap: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2C3E50;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .editor-container {
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        #editor {
+            height: 350px;
+        }
+
+        .template-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .template-option {
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .template-option:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+        }
+
+        .template-option.selected {
+            border-color: #27ae60;
+            background: #f8fff9;
+        }
+
+        .template-preview {
+            width: 100%;
+            height: 80px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .template-default { background: linear-gradient(135deg, #2C3E50, #4A6572); }
+        .template-professional { background: linear-gradient(135deg, #1A5276, #3498DB); }
+        .template-modern { background: linear-gradient(135deg, #27AE60, #58D68D); }
+        .template-creative { background: linear-gradient(135deg, #8E44AD, #BB8FCE); }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-generate {
+            background: #27ae60;
+            color: white;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .btn-generate:hover {
+            background: #219a52;
+            transform: translateY(-2px);
+        }
+
+        .btn-generate:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .download-section {
+            text-align: center;
+            padding: 20px;
+            background: #e8f5e8;
+            border-radius: 8px;
+            border: 2px dashed #27ae60;
+        }
+
+        .download-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 12px 24px;
+            background: #27ae60;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.3s;
+            font-weight: 600;
+        }
+
+        .download-link:hover {
+            background: #219a52;
+            transform: translateY(-2px);
+        }
+
+        .file-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .image-preview-container {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px dashed #ccc;
+        }
+
+        .image-preview {
+            max-width: 200px;
+            max-height: 150px;
+            margin: 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .uploaded-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 PPTX Generator - WYSIWYG</h1>
+            <p>สร้าง PowerPoint จาก Editor (รองรับรูปภาพ)</p>
+        </div>
+
+        <div class="content">
+            <div class="alert" id="alert"></div>
+
+            <div class="form-group">
+                <label for="presentationTitle">หัวข้อการนำเสนอ:</label>
+                <input type="text" id="presentationTitle" placeholder="เช่น โครงการพัฒนาระบบใหม่">
+            </div>
+
+            <div class="form-group">
+                <label for="editor">เนื้อหาการนำเสนอ:</label>
+                <div class="editor-container">
+                    <div id="editor">
+                        <h1>หัวข้อหลัก</h1>
+                        <p>นี่คือเนื้อหาการนำเสนอของคุณ</p>
+                        <ul>
+                            <li>รายการที่ 1</li>
+                            <li>รายการที่ 2</li>
+                            <li>รายการที่ 3</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>อัพโหลดรูปภาพ:</label>
+                <input type="file" id="imageUpload" accept="image/*" multiple>
+                <div class="image-preview-container">
+                    <div id="imagePreviews" class="uploaded-images"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>เลือกเทมเพลต:</label>
+                <div class="template-options">
+                    <div class="template-option selected" data-template="default">
+                        <div class="template-preview template-default"></div>
+                        <div>Default</div>
+                    </div>
+                    <div class="template-option" data-template="professional">
+                        <div class="template-preview template-professional"></div>
+                        <div>Professional</div>
+                    </div>
+                    <div class="template-option" data-template="modern">
+                        <div class="template-preview template-modern"></div>
+                        <div>Modern</div>
+                    </div>
+                    <div class="template-option" data-template="creative">
+                        <div class="template-preview template-creative"></div>
+                        <div>Creative</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-generate" onclick="generatePPT()" id="generateBtn">
+                    <span>📊</span>
+                    สร้าง PowerPoint
+                </button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>กำลังสร้างไฟล์ PowerPoint...</p>
+            </div>
+
+            <div class="result-section" id="resultSection" style="display: none;">
+                <h3>✅ สร้างไฟล์สำเร็จ!</h3>
+                <div class="download-section">
+                    <p>ไฟล์ PowerPoint ของคุณพร้อมแล้ว</p>
+                    <a href="#" class="download-link" id="downloadLink">
+                        <span>📥</span>
+                        ดาวน์โหลดไฟล์
+                    </a>
+                    <div class="file-info">
+                        <span id="fileName"></span>
+                        <span id="slideCount"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Quill Editor
+        const quill = new Quill('#editor', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link', 'image'],
+                    ['clean']
+                ]
+            },
+            placeholder: 'เขียนเนื้อหาการนำเสนอของคุณที่นี่...'
+        });
+
+        let selectedTemplate = 'default';
+        let uploadedImages = [];
+
+        // เลือกเทมเพลต
+        document.querySelectorAll('.template-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.template-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                selectedTemplate = this.dataset.template;
+            });
+        });
+
+        // จัดการอัพโหลดรูปภาพ
+        document.getElementById('imageUpload').addEventListener('change', function(event) {
+            const files = event.target.files;
+            const previewContainer = document.getElementById('imagePreviews');
+            
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        // เพิ่มรูปภาพใน array
+                        uploadedImages.push({
+                            data: e.target.result,
+                            name: file.name
+                        });
+                        
+                        // แสดง preview
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'image-preview';
+                        img.title = file.name;
+                        previewContainer.appendChild(img);
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            }
+            
+            // รีเซ็ต input file
+            event.target.value = '';
+        });
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        function setLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('generateBtn').disabled = show;
+        }
+
+        async function generatePPT() {
+            const title = document.getElementById('presentationTitle').value.trim();
+            const htmlContent = quill.root.innerHTML;
+
+            if (!title) {
+                showAlert('กรุณาใส่หัวข้อการนำเสนอ', 'error');
+                return;
+            }
+
+            if (!htmlContent || htmlContent === '<p><br></p>') {
+                showAlert('กรุณาใส่เนื้อหาการนำเสนอ', 'error');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const response = await fetch('/generate-pptx', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        title, 
+                        htmlContent,
+                        template: selectedTemplate,
+                        images: uploadedImages
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('downloadLink').href = data.downloadUrl;
+                    document.getElementById('fileName').textContent = `ไฟล์: ${data.downloadUrl.split('/').pop()}`;
+                    document.getElementById('slideCount').textContent = `จำนวนสไลด์: ${data.slideCount}`;
+                    document.getElementById('resultSection').style.display = 'block';
+                    
+                    showAlert(`สร้างไฟล์ PowerPoint สำเร็จ! (${data.slideCount} สไลด์)`, 'success');
+                    
+                    document.getElementById('resultSection').scrollIntoView({ 
+                        behavior: 'smooth' 
+                    });
+                } else {
+                    showAlert(data.error || 'เกิดข้อผิดพลาดในการสร้างไฟล์', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function checkForm() {
+            const title = document.getElementById('presentationTitle').value.trim();
+            const content = quill.root.innerHTML;
+            const generateBtn = document.getElementById('generateBtn');
+            
+            generateBtn.disabled = !title || !content || content === '<p><br></p>';
+        }
+
+        // ตรวจสอบฟอร์มเมื่อเปลี่ยนหัวข้อ
+        document.getElementById('presentationTitle').addEventListener('input', checkForm);
+
+        // ตรวจสอบฟอร์มเมื่อแก้ไขเนื้อหา
+        quill.on('text-change', checkForm);
+
+        // ตรวจสอบฟอร์มครั้งแรก
+        checkForm();
+    </script>
+</body>
+</html>

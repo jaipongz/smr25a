@@ -1,0 +1,107 @@
+.package-lock.json
+./node_modules/
+.DS_Store# -------------------------
+# macOS
+# -------------------------
+.DS_Store
+
+# -------------------------
+# Node.js
+# -------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+downloads/
+build/
+.cache/
+.next/
+.nuxt/
+out/
+coverage/
+
+# Environment variables
+.env
+.env.*.local
+
+# Logs
+logs/
+*.log
+debug.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Optional eslint cache
+.eslintcache
+
+# Parcel cache
+.cache/
+.parcel-cache/
+
+# VSCode
+.vscode/
+.history/
+
+# -------------------------
+# Python
+# -------------------------
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+env/
+venv/
+ENV/
+.venv/
+
+# Python cache
+*.pyo
+*.pyd
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Test & coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# PyCharm
+.idea/
+
+# SQLite
+*.sqlite3
+
+# -------------------------
+# Others
+# -------------------------
+tmp/
+temp/
