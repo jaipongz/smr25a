@@ -205,9 +205,10 @@ app.post("/summarize", async (req, res) => {
         const response = await axios.post(
             "http://localhost:11434/api/generate",
             {
-                model: "llama3.2",
+                // model: "llama3.2",
+                model: "qwen2.5:3b",
                 prompt: `
-            สรุปเนื้อหาการประชุมให้อยู่ในรูปแบบย่อ เป็นภาษาไทย มีหัวข้อย่อย และ action items ที่ต้องทำต่อ :
+            สรุปเนื้อหาการประชุมให้อยู่ในรูปแบบย่อ เป็นภาษาไทย :
   
             ---
             ${content}
@@ -216,6 +217,21 @@ app.post("/summarize", async (req, res) => {
                 stream: false
             }
         );
+        // const response = await axios.post(
+        //     "http://localhost:11434/api/generate",
+        //     {
+        //         // model: "llama3.2",
+        //         model: "qwen2.5:3b",
+        //         prompt: `
+        //     สรุปเนื้อหาการประชุมให้อยู่ในรูปแบบย่อ เป็นภาษาไทย มีหัวข้อย่อย และ action items ที่ต้องทำต่อ :
+  
+        //     ---
+        //     ${content}
+        //     ---
+        //   `,
+        //         stream: false
+        //     }
+        // );
         res.json({ summary: response.data.response.trim() });
     } catch (err) {
         console.log('Error: ', err);
