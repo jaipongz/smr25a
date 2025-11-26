@@ -206,7 +206,9 @@ app.post("/summarize", async (req, res) => {
             "http://localhost:11434/api/generate",
             {
                 // model: "llama3.2",
-                model: "qwen2.5:3b",
+                // model: "qwen2.5:3b",
+                // model: "qwen2.5:1.5b",
+                model: "gemma2:2b",
                 prompt: `
             สรุปเนื้อหาการประชุมให้อยู่ในรูปแบบย่อ เป็นภาษาไทย :
   
